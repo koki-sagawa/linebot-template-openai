@@ -36,7 +36,6 @@ _ = load_dotenv(find_dotenv())  # read local .env file
 
 
 # Initialize OpenAI API
-
 def call_openai_chat_api(user_message):
     openai.api_key = os.getenv('OPENAI_API_KEY', None)
 
@@ -61,7 +60,7 @@ if channel_access_token is None:
     print('Specify LINE_CHANNEL_ACCESS_TOKEN as environment variable.')
     sys.exit(1)
 
-# Initialize LINE Bot Messaigng API
+# Initialize LINE Bot Messaging API
 app = FastAPI()
 session = aiohttp.ClientSession()
 async_http_client = AiohttpAsyncHttpClient(session)
@@ -69,16 +68,22 @@ line_bot_api = AsyncLineBotApi(channel_access_token, async_http_client)
 parser = WebhookParser(channel_secret)
 
 
+@app.get("/")
+async def root():
+    return {"message": "Hello from linebot-template-openai!"}
+
+
 @app.post("/callback")
 async def handle_callback(request: Request):
-    signature = request.headers['X-Line-Signature']
-
-    # get request body as text
+    print("Callback received")
     body = await request.body()
-    body = body.decode()
+    body_text = body.decode()
+    print("Request body:", body_text)
+    signature = request.headers.get('X-Line-Signature', '')
+    print("Signature:", signature)
 
     try:
-        events = parser.parse(body, signature)
+        events = parser.parse(body_text, signature)
     except InvalidSignatureError:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
