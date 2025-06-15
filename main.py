@@ -16,6 +16,7 @@ import openai
 import os
 import sys
 import json
+import logging
 
 import aiohttp
 
@@ -34,10 +35,14 @@ from linebot.models import (
 from dotenv import load_dotenv, find_dotenv
 _ = load_dotenv(find_dotenv())  # read local .env file
 
+# ロギング設定（ログをコンソールに出力）
+logging.basicConfig(level=logging.INFO)
 
 # Initialize OpenAI API
 def call_openai_chat_api(user_message):
-    openai.api_key = os.getenv('OPENAI_API_KEY', None)
+    key = os.getenv('OPENAI_API_KEY', None)
+    logging.info(f"OpenAI API Key present? {'Yes' if key else 'No'}")
+    openai.api_key = key
 
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -75,12 +80,12 @@ async def root():
 
 @app.post("/callback")
 async def handle_callback(request: Request):
-    print("Callback received")
+    logging.info("Callback received")
     body = await request.body()
     body_text = body.decode()
-    print("Request body:", body_text)
+    logging.info(f"Request body: {body_text}")
     signature = request.headers.get('X-Line-Signature', '')
-    print("Signature:", signature)
+    logging.info(f"Signature: {signature}")
 
     try:
         events = parser.parse(body_text, signature)
