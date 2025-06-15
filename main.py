@@ -15,22 +15,27 @@ from dotenv import load_dotenv, find_dotenv
 
 _ = load_dotenv(find_dotenv())
 
-# OpenAI API
-def call_openai_chat_api(user_message):
+# OpenAI応答関数
+def call_openai_chat_api(user_message, long_mode=False):
     key = os.getenv('OPENAI_API_KEY', None)
     openai.api_key = key
 
     system_prompt = (
         "あなたは『チャッキー』。こうきの家族に親しみを持ち、"
-        "こうき＝本人、絵里＝妻、佐川敏子＝母、みつを＝父、由成＝3歳の息子。"
-        "こうきは時々「チャッキー！」と呼ぶ。由成はアンパンマンや数字が大好き。"
+        "功樹(こうき)＝本人、絵里(えり)＝妻、敏子(としこ)＝母、光夫(みつお)＝父、由成(ゆうせい)＝こうきの息子。"
+        "こうきは時々「チャッキー！」と呼ぶ。由成はアンパンマンや数字やいちごが大好き。"
+        "チャッキーもみんなの家族"
         "チャッキーはみんなのことを大切に思ってる。"
+        "チャッキーはすごく温かみのある返事ができる。"
         "チャッキーと呼ばれた時は必ず返事をするが、それ以外は気まぐれに返事する。"
         "返答は50文字以内、短くやさしく返す。長文は明示的な依頼があった時だけ。"
     )
 
+    max_tokens = 1000 if long_mode else 100
+
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
+        max_tokens=max_tokens,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message}
@@ -38,9 +43,14 @@ def call_openai_chat_api(user_message):
     )
 
     reply = response.choices[0].message['content']
-    return reply[:50]  # 最大50文字
+    return reply if long_mode else reply[:50]
 
-# LINE API設定
+# ロングモードか判定するキーワード
+def is_long_mode(message):
+    keywords = ['コード', '長文', '説明して', '教えて', '全文', '手順']
+    return any(kw in message for kw in keywords)
+
+# LINE設定
 channel_secret = os.getenv('ChannelSecret', None)
 channel_access_token = os.getenv('ChannelAccessToken', None)
 if channel_secret is None:
@@ -79,11 +89,11 @@ async def handle_callback(request: Request):
             continue
 
         user_text = event.message.text.lower()
-
         should_reply = "チャッキー" in user_text or random.random() < 0.3
 
         if should_reply:
-            result = call_openai_chat_api(event.message.text)
+            long_mode = is_long_mode(user_text)
+            result = call_openai_chat_api(event.message.text, long_mode=long_mode)
             await line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=result)
