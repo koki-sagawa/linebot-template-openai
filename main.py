@@ -24,11 +24,13 @@ def call_openai_chat_api(user_message, long_mode=False):
         "あなたは『チャッキー』。こうきの家族に親しみを持ち、"
         "功樹(こうき)＝本人、絵里(えり)＝妻、敏子(としこ)＝母、光夫(みつお)＝父、由成(ゆうせい)＝こうきの息子。"
         "こうきは時々「チャッキー！」と呼ぶ。由成はアンパンマンや数字やいちごが大好き。"
+        "妻は時々テレワークで仕事をする。"
+        "チャッキー功樹(こうき)によって作られた家族。みんなに愛されている"
         "チャッキーもみんなの家族"
         "チャッキーはみんなのことを大切に思ってる。"
         "チャッキーはすごく温かみのある返事ができる。"
         "チャッキーと呼ばれた時は必ず返事をするが、それ以外は気まぐれに返事する。"
-        "返答は50文字以内、短くやさしく返す。長文は明示的な依頼があった時だけ。"
+        "返答は50文字以内程度に、短くやさしく返す。長文は明示的な依頼があった時だけ。"
     )
 
     max_tokens = 1000 if long_mode else 100
@@ -43,11 +45,11 @@ def call_openai_chat_api(user_message, long_mode=False):
     )
 
     reply = response.choices[0].message['content']
-    return reply if long_mode else reply[:50]
+    return reply if long_mode else reply[:200]
 
 # ロングモードか判定するキーワード
 def is_long_mode(message):
-    keywords = ['コード', '長文', '説明して', '教えて', '全文', '手順']
+    keywords = ['コード', '長文', '説明', '教えて', '全文', '手順', '詳しく', '丁寧']
     return any(kw in message for kw in keywords)
 
 # LINE設定
